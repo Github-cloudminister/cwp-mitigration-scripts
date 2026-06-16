@@ -207,9 +207,15 @@ if [ "$DEEP" -eq 1 ]; then
 fi
 section "Suspicious PHP Backdoors"
 
-find /home -type f \( -name '*.php' -o -name '*.phtml' \) \
-  -exec grep -lE '__destruct|__call|file_put_contents|call_user_func_array|call_user_func|md5\(\$_POST|base64_decode|gzinflate|gzuncompress' {} \; \
-  > "$OUT/web/suspicious_php_backdoors.txt" 2>/dev/null
+find /home -type f \
+\( -name '*.php' -o -name '*.phtml' \) \
+! -path '*/wp-content/*' \
+! -path '*/wp-includes/*' \
+! -path '*/wp-admin/*' \
+! -path '*/vendor/*' \
+-exec grep -lE \
+'eval\(base64_decode|eval\(gzinflate|eval\(gzuncompress|assert\(\$_POST|assert\(\$_REQUEST|shell_exec\(\$_POST|passthru\(\$_POST|system\(\$_POST|preg_replace\(.*\/e' {} \; \
+> "$OUT/web/suspicious_php_backdoors.txt"
 
 count_file "suspicious_php_backdoors" \
 "$OUT/web/suspicious_php_backdoors.txt"
