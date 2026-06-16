@@ -363,22 +363,6 @@ else
   log "SKIPPED: use --block-ips to add known attacker IPs to csf.deny"
 fi
 
-section "Quarantine Suspicious PHP Backdoors"
-
-find /home -type f \
-\( -name '*.php' -o -name '*.phtml' \) \
--exec grep -lE '__destruct|__call|md5\(\$_POST|call_user_func_array|file_put_contents|gzinflate|gzuncompress' {} \; \
-> "$BK/logs/suspicious_php.txt" 2>/dev/null
-
-while IFS= read -r f; do
-    [ -f "$f" ] || continue
-
-    log "SUSPICIOUS_PHP: $f"
-
-    quarantine_file "$f"
-
-done < "$BK/logs/suspicious_php.txt"
-
 
 section "Find Immutable Files"
 
