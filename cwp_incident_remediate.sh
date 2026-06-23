@@ -166,13 +166,14 @@ for f in \
 done
 
 section "Remove Malicious SSH Key Lines"
-find /root /home -path '*/.ssh/authorized_keys' -type f -print 2>/dev/null > "$BK/logs/authorized_key_files.txt"
+find / -path '*/.ssh/authorized_keys' -type f -not -path '/root/incident-cleanup-*/*' -not -path '/root/malware-quarantine-*/*' -not -path '/root/forensics/*' -print 2>/dev/null > "$BK/logs/authorized_key_files.txt"
 while IFS= read -r f; do
   [ -f "$f" ] || continue
   if grep -q "$BAD_SSH_KEY" "$f" 2>/dev/null; then
     log "FOUND_BAD_KEY: $f"
     backup_file "$f"
     if [ "$APPLY" -eq 1 ]; then
+      chattr -i "$f" 2>/dev/null || true
       tmp="$f.clean.$$"
       grep -v "$BAD_SSH_KEY" "$f" > "$tmp"
       chown --reference="$f" "$tmp"
@@ -376,7 +377,7 @@ log "immutable_files=$(wc -l < "$BK/logs/immutable_files.txt")"
 
 
 section "Validation"
-find /root /home -path '*/.ssh/authorized_keys' -type f -exec grep -Hn "$BAD_SSH_KEY" {} \; \
+find / -path '*/.ssh/authorized_keys' -type f -not -path '/root/incident-cleanup-*/*' -not -path '/root/malware-quarantine-*/*' -not -path '/root/forensics/*' -exec grep -Hn "$BAD_SSH_KEY" {} \; \
   > "$BK/logs/remaining_bad_ssh_key.txt" 2>/dev/null || true
 find /usr/bin /home/*/.config/htop -type f -name 'defunct' -exec sha256sum {} \; 2>/dev/null | grep "$BAD_HASH" > "$BK/logs/remaining_bad_hash.txt" || true
 find /home -path '*/uploads/*' -type f \( -name '*.php' -o -name '*.phtml' -o -name '*.php[0-9]' \) ! -name 'index.php' -print 2>/dev/null > "$BK/logs/remaining_upload_php_nonindex.txt"
